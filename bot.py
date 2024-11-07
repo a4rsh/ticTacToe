@@ -24,8 +24,13 @@ def botMove(board, turn):
         outcome = 0
         if adv == turn:
             outcome = 1
-        elif adv == turn % 2 + 1:
+        elif adv == 0:
+            outcome = 0
+        else:
             outcome = -1
+
+        # Uncommenting this will show the evaluation for all possible moves before the bot move is made
+        # print("Move: " + str(testMove) + ", Outcome: " + str(outcome))
 
         if outcome > bestOutcome:
             bestOutcome = outcome
@@ -35,18 +40,29 @@ def botMove(board, turn):
     return bestMove
 
 def evalPosition(board, turn):
+    # Generate all legal moves
     legalMoves = []
     for testMove in range(10):
         if isLegalMove(board, testMove):
             legalMoves.append(testMove)
-    adv = 0
+    adv = turn % 2 + 1 # Keeps track of who has the advantage, 0 is a draw, assumes worst case for start
     for testMove in legalMoves:
+        # Iterating through the legal moves for this position
         localBoard = [row[:] for row in board]
         game.makeMove(localBoard, testMove, turn)
-        winner = game.checkWinner(localBoard, testMove)
+        winner = game.checkWinner(localBoard, testMove)  # 0 -> Game in Progress, 1 & 2 -> Winner, 3 -> Draw
         if winner == turn:
-            adv = turn
-            return adv
+            # Player has advantage if it can win in one move
+            return turn
+        elif winner == 3:
+            # If a move can force a draw, the worst case is now a draw
+            if adv == turn % 2 + 1:
+                adv = 0
         elif winner == 0:
-            adv = evalPosition(localBoard, turn % 2 + 1)
+            # If the game is ongoing, the position is evaluated further
+            # Evaluation is updated if it is better
+            nextEval = evalPosition(localBoard, turn % 2 + 1)
+            if adv == turn % 2 + 1 or nextEval == turn:
+                adv = nextEval
+        # The other player cannot win on this turn, and if it's a draw adv can stay at 0
     return adv
